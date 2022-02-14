@@ -2,6 +2,7 @@ VERSION = 1
 SUBVERSION = 2
 PATCHLEVEL = 0
 EXTRAVERSION = IW-BETA
+REVISION = 2202
 
 # How to DEBUG?
 # Simply type "make <debug mode>" to build OPL with the necessary debugging functionality.
@@ -43,25 +44,8 @@ INGAME_DEBUG ?= 0
 DECI2_DEBUG ?= 0
 
 # ======== DO NOT MODIFY VALUES AFTER THIS POINT! UNLESS YOU KNOW WHAT YOU ARE DOING ========
-REVISION = $(shell expr $(shell git rev-list --count HEAD) + 2)
 
-GIT_HASH = $(shell git rev-parse --short=7 HEAD 2>/dev/null)
-ifeq ($(shell git diff --quiet; echo $$?),1)
-  DIRTY = -mod
-endif
-ifneq ($(shell test -d .git; echo $$?),0)
-  DIRTY = -mod
-endif
-
-GIT_TAG = $(shell git describe --exact-match --tags 2>/dev/null)
 OPL_VERSION = v$(VERSION).$(SUBVERSION).$(PATCHLEVEL)$(if $(EXTRAVERSION),-$(EXTRAVERSION))-$(REVISION)$(if $(GIT_HASH),-$(GIT_HASH))$(if $(DIRTY),$(DIRTY))$(if $(LOCALVERSION),-$(LOCALVERSION))
-
-ifneq ($(GIT_TAG),)
-ifneq ($(GIT_TAG),latest)
-	# git revision is tagged
-	OPL_VERSION = $(GIT_TAG)$(if $(DIRTY),$(DIRTY))
-endif
-endif
 
 #START of OPL_DB tweaks
 FRONTEND_OBJS = pad.o fntsys.o renderman.o menusys.o OSDHistory.o system.o lang.o config.o hdd.o dialogs.o \
@@ -104,7 +88,7 @@ EECORE_OBJS = ee_core.o ioprp.o util.o \
 
 EE_BIN = opl.elf
 EE_BIN_STRIPPED = opl_stripped.elf
-EE_BIN_PACKED = OPNPS2LD.ELF
+EE_BIN_PACKED = OPNPS2LD-DA.ELF
 EE_VPKD = OPNPS2LD-$(OPL_VERSION)
 EE_SRC_DIR = src/
 EE_OBJS_DIR = obj/
