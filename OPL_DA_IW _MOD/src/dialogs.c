@@ -853,13 +853,13 @@ struct UIItem diaAbout[] = {
 
     {UI_SPACER},
     //START of OPL_DB tweaks
-    {UI_LABEL, 0, 1, 1, -1, 0, 10, {.label = {"BatRastard, belek666, crazyc, danielb, dlanor, doctorxyz, hominem.te.esse, JOJAPA", -1}}},
+    {UI_LABEL, 0, 1, 1, -1, 0, 10, {.label = {"BatRastard, belek666, crazyc, danielb, dlanor, doctorxyz, hominem.te.esse, JOJAPA,", -1}}},
     //END of OPL_DB tweaks
     {UI_BREAK},
 
     {UI_SPACER},
     //START of OPL_DB tweaks
-    {UI_LABEL, 0, 1, 1, -1, 0, 10, {.label = {"ifcaro, izdubar, Jay-Jay, jimmikaelkael, Maximus32, misfire, Polo35, Infinity Corp", -1}}},
+    {UI_LABEL, 0, 1, 1, -1, 0, 10, {.label = {"ifcaro, izdubar, Jay-Jay, jimmikaelkael, Maximus32, misfire, Polo35, Infinity Corp,", -1}}},
     //END of OPL_DB tweaks
     {UI_BREAK},
 
@@ -883,7 +883,7 @@ struct UIItem diaAbout[] = {
 
     {UI_SPACER},
     //START of OPL_DB tweaks
-    {UI_LABEL, 0, 1, 1, -1, 0, 10, {.label = {"RandQalan, ShaolinAssassin, yoshi314, zero35 and PS2 Heavy Gamers", -1}}},
+    {UI_LABEL, 0, 1, 1, -1, 0, 10, {.label = {"RandQalan, ShaolinAssassin, yoshi314, and zero35 and PS2 Heavy Gamers", -1}}},
     {UI_SPLITTER},
     //END of OPL_DB tweaks
 

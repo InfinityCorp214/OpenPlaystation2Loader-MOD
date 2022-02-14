@@ -2,7 +2,7 @@ VERSION = 1
 SUBVERSION = 2
 PATCHLEVEL = 0
 EXTRAVERSION = IW-Beta
-REVISION = 1826
+REVISION = 1832
 
 # How to DEBUG?
 # Simply type "make <debug mode>" to build OPL with the necessary debugging functionality.
