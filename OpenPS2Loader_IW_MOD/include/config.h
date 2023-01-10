@@ -38,6 +38,10 @@ enum CONFIG_INDEX {
 #define CONFIG_ITEM_DNAS         "$DNAS"
 #define CONFIG_ITEM_CONFIGSOURCE "$ConfigSource"
 
+#define CONFIG_ITEM_OSDLNG        "$CustomLanguageValue"
+#define CONFIG_ITEM_OSDLNG_SOURCE "$CustomLanguageSource"
+#define CONFIG_ITEM_OSDLNG_ENABLE "$CustomLanguageEnable"
+
 // Per-Game GSM keys. -Bat-
 #define CONFIG_ITEM_GSMSOURCE   "$GSMSource"
 #define CONFIG_ITEM_ENABLEGSM   "$EnableGSM"
@@ -51,9 +55,11 @@ enum CONFIG_INDEX {
 #define CONFIG_ITEM_ENABLECHEAT  "$EnableCheat"
 #define CONFIG_ITEM_CHEATMODE    "$CheatMode"
 
-#define CONFIG_ITEM_PADEMUSOURCE   "$PADEMUSource"
-#define CONFIG_ITEM_ENABLEPADEMU   "$EnablePadEmu"
-#define CONFIG_ITEM_PADEMUSETTINGS "$PadEmuSettings"
+#define CONFIG_ITEM_PADEMUSOURCE     "$PADEMUSource"
+#define CONFIG_ITEM_ENABLEPADEMU     "$EnablePadEmu"
+#define CONFIG_ITEM_PADEMUSETTINGS   "$PadEmuSettings"
+#define CONFIG_ITEM_PADMACROSETTINGS "$PadMacroSettings"
+#define CONFIG_ITEM_PADMACROSOURCE   "$PadMacroSource"
 
 // OPL config keys
 #define CONFIG_OPL_THEME                "theme"
@@ -87,14 +93,20 @@ enum CONFIG_INDEX {
 #define CONFIG_OPL_HDD_MODE             "hdd_mode"
 #define CONFIG_OPL_ETH_MODE             "eth_mode"
 #define CONFIG_OPL_APP_MODE             "app_mode"
+#define CONFIG_OPL_BDM_CACHE            "bdm_cache"
+#define CONFIG_OPL_HDD_CACHE            "hdd_cache"
+#define CONFIG_OPL_SMB_CACHE            "smb_cache"
 #define CONFIG_OPL_ENABLE_ILINK         "enable_ilink"
 #define CONFIG_OPL_ENABLE_MX4SIO        "enable_mx4sio"
 #define CONFIG_OPL_SWAP_SEL_BUTTON      "swap_select_btn"
 #define CONFIG_OPL_PARENTAL_LOCK_PWD    "parental_lock_password"
 #define CONFIG_OPL_SFX                  "enable_sfx"
 #define CONFIG_OPL_BOOT_SND             "enable_boot_snd"
+#define CONFIG_OPL_BGM                  "enable_bgm"
 #define CONFIG_OPL_SFX_VOLUME           "sfx_volume"
 #define CONFIG_OPL_BOOT_SND_VOLUME      "boot_snd_volume"
+#define CONFIG_OPL_BGM_VOLUME           "bgm_volume"
+#define CONFIG_OPL_DEFAULT_BGM_PATH     "default_bgm_path"
 
 // Network config keys
 #define CONFIG_NET_ETH_LINKM          "eth_linkmode"

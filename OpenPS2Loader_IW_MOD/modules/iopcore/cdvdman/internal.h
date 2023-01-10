@@ -39,19 +39,6 @@
 #define iDPRINTF(args...)
 #endif
 
-#define CDVDMAN_SETTINGS_DEFAULT_COMMON         \
-    {                                           \
-        0x69, 0x69, 0x1234, 0x39393939, "B00BS" \
-    }
-#define CDVDMAN_SETTINGS_DEFAULT_HDD 0x12345678
-#define CDVDMAN_SETTINGS_DEFAULT_SMB                          \
-    "######  FILENAME  ######",                               \
-    {                                                         \
-        {                                                     \
-            "192.168.0.10", 0x8510, "PS2SMB", "", "GUEST", "" \
-        }                                                     \
-    }
-
 #ifdef HDD_DRIVER
 #define CDVDMAN_SETTINGS_TYPE                    cdvdman_settings_hdd
 #define CDVDMAN_SETTINGS_DEFAULT_DEVICE_SETTINGS CDVDMAN_SETTINGS_DEFAULT_HDD,
@@ -108,7 +95,7 @@ struct dirTocEntry
 
 typedef void (*StmCallback_t)(void);
 
-//Internal (common) function prototypes
+// Internal (common) function prototypes
 extern void SetStm0Callback(StmCallback_t callback);
 extern int cdvdman_AsyncRead(u32 lsn, u32 sectors, void *buf);
 extern int cdvdman_SyncRead(u32 lsn, u32 sectors, void *buf);
@@ -122,7 +109,13 @@ extern void cdvdman_initdev(void);
 
 extern struct CDVDMAN_SETTINGS_TYPE cdvdman_settings;
 
+#ifdef HDD_DRIVER
+// HDD driver also uses this buffer, for aligning unaligned reads.
 #define CDVDMAN_BUF_SECTORS 2
+#else
+// Normally this buffer is only used by 'searchfile', only 1 sector used
+#define CDVDMAN_BUF_SECTORS 1
+#endif
 extern u8 cdvdman_buf[CDVDMAN_BUF_SECTORS * 2048];
 
 extern int cdrom_io_sema;

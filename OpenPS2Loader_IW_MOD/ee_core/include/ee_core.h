@@ -40,6 +40,8 @@ extern int iop_reboot_count;
 
 extern int padOpen_hooked;
 
+extern int enforceLanguage;
+
 enum ETH_OP_MODES {
     ETH_OP_MODE_AUTO = 0,
     ETH_OP_MODE_100M_FDX,
@@ -85,6 +87,7 @@ extern int EnableCheatOp;
 #ifdef PADEMU
 extern int EnablePadEmuOp;
 extern int PadEmuSettings;
+extern int PadMacroSettings;
 #endif
 
 extern int EnableDebug;

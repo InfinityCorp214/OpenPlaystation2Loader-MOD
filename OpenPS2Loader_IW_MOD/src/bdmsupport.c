@@ -12,6 +12,8 @@
 #include "include/cheatman.h"
 #include "modules/iopcore/common/cdvd_config.h"
 
+#include <usbhdfsd-common.h>
+
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioIoctl, fileXioDevctl
 
@@ -28,6 +30,14 @@ static int mx4sioModLoaded = 0;
 
 // forward declaration
 static item_list_t bdmGameList;
+
+void bdmSetPrefix(void)
+{
+    if (gBDMPrefix[0] != '\0')
+        sprintf(bdmPrefix, "mass0:%s/", gBDMPrefix);
+    else
+        sprintf(bdmPrefix, "mass0:");
+}
 
 // Identifies the partition that the specified file is stored on and generates a full path to it.
 int bdmFindPartition(char *target, const char *name, int write)
@@ -95,8 +105,8 @@ void bdmLoadModules(void)
     // Load Block Device Manager (BDM)
     sysLoadModuleBuffer(&bdm_irx, size_bdm_irx, 0, NULL);
 
-    // Load VFAT (mass:) driver
-    sysLoadModuleBuffer(&bdmfs_vfat_irx, size_bdmfs_vfat_irx, 0, NULL);
+    // Load FATFS (mass:) driver
+    sysLoadModuleBuffer(&bdmfs_fatfs_irx, size_bdmfs_fatfs_irx, 0, NULL);
 
     // Load USB Block Device drivers
     sysLoadModuleBuffer(&usbd_irx, size_usbd_irx, 0, NULL);
@@ -235,7 +245,7 @@ static void bdmRenameGame(int id, char *newName)
     bdmULSizePrev = -2;
 }
 
-static void bdmLaunchGame(int id, config_set_t *configSet)
+void bdmLaunchGame(int id, config_set_t *configSet)
 {
     int i, fd, index, compatmask = 0;
     int EnablePS2Logo = 0;
@@ -243,10 +253,15 @@ static void bdmLaunchGame(int id, config_set_t *configSet)
     unsigned int start;
     unsigned int startCluster;
     char partname[256], filename[32];
-    base_game_info_t *game = &bdmGames[id];
+    base_game_info_t *game;
     struct cdvdman_settings_bdm *settings;
     u32 layer1_start, layer1_offset;
     unsigned short int layer1_part;
+
+    if (gAutoLaunchBDMGame == NULL)
+        game = &bdmGames[id];
+    else
+        game = gAutoLaunchBDMGame;
 
     char vmc_name[32], vmc_path[256], have_error = 0;
     int vmc_id, size_mcemu_irx = 0;
@@ -289,16 +304,19 @@ static void bdmLaunchGame(int id, config_set_t *configSet)
             }
         }
 
-        if (have_error) {
-            char error[256];
-            if (have_error == 2) // VMC file is fragmented
-                snprintf(error, sizeof(error), _l(_STR_ERR_VMC_FRAGMENTED_CONTINUE), vmc_name, (vmc_id + 1));
-            else
-                snprintf(error, sizeof(error), _l(_STR_ERR_VMC_CONTINUE), vmc_name, (vmc_id + 1));
-            if (!guiMsgBox(error, 1, NULL)) {
-                return;
+        if (gAutoLaunchBDMGame == NULL) {
+            if (have_error) {
+                char error[256];
+                if (have_error == 2) // VMC file is fragmented
+                    snprintf(error, sizeof(error), _l(_STR_ERR_VMC_FRAGMENTED_CONTINUE), vmc_name, (vmc_id + 1));
+                else
+                    snprintf(error, sizeof(error), _l(_STR_ERR_VMC_CONTINUE), vmc_name, (vmc_id + 1));
+                if (!guiMsgBox(error, 1, NULL)) {
+                    return;
+                }
             }
-        }
+        } else
+            LOG("VMC error\n");
 
         for (i = 0; i < size_bdm_mcemu_irx; i++) {
             if (((u32 *)&bdm_mcemu_irx)[i] == (0xC0DEFAC0 + vmc_id)) {
@@ -310,40 +328,54 @@ static void bdmLaunchGame(int id, config_set_t *configSet)
         }
     }
 
-    void **irx = &bdm_cdvdman_irx;
+    void *irx = &bdm_cdvdman_irx;
     int irx_size = size_bdm_cdvdman_irx;
     compatmask = sbPrepare(game, configSet, irx_size, irx, &index);
     settings = (struct cdvdman_settings_bdm *)((u8 *)irx + index);
+    if (settings == NULL)
+        return;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+    memset(&settings->frags[0], 0, sizeof(bd_fragment_t) * BDM_MAX_FRAGS);
+#pragma GCC diagnostic pop
+    u8 iTotalFragCount = 0;
+
+    //
+    // Add ISO as fragfile[0] to fragment list
+    //
+    struct cdvdman_fragfile *iso_frag = &settings->fragfile[0];
+    iso_frag->frag_start = 0;
+    iso_frag->frag_count = 0;
     for (i = 0; i < game->parts; i++) {
+        // Open file
         sbCreatePath(game, partname, bdmPrefix, "/", i);
         fd = open(partname, O_RDONLY);
-        if (fd >= 0) {
-            int *pBDMDriver = (int *)bdmDriver;
-            *pBDMDriver = fileXioIoctl(fd, USBMASS_IOCTL_GET_DRIVERNAME, "");
-            LOG("bdmDriver=%s\n", bdmDriver);
-
-            settings->LBAs[i] = fileXioIoctl(fd, USBMASS_IOCTL_GET_LBA, "");
-            if (fileXioIoctl(fd, USBMASS_IOCTL_CHECK_CHAIN, "") != 1) {
-                close(fd);
-                // Game is fragmented. Do not continue.
-                if (settings != NULL)
-                    sbUnprepare(&settings->common);
-
-                guiMsgBox(_l(_STR_ERR_FRAGMENTED), 0, NULL);
-                return;
-            }
-
-            if ((gPS2Logo) && (i == 0))
-                EnablePS2Logo = CheckPS2Logo(fd, 0);
-
-            close(fd);
-        } else {
-            // Unable to open part of the game. Do not continue.
-            if (settings != NULL)
-                sbUnprepare(&settings->common);
+        if (fd < 0) {
+            sbUnprepare(&settings->common);
             guiMsgBox(_l(_STR_ERR_FILE_INVALID), 0, NULL);
             return;
         }
+
+        // Get driver - we should only need to do this once
+        int *pBDMDriver = (int *)bdmDriver;
+        *pBDMDriver = fileXioIoctl(fd, USBMASS_IOCTL_GET_DRIVERNAME, "");
+
+        // Get fragment list
+        int iFragCount = fileXioIoctl2(fd, USBMASS_IOCTL_GET_FRAGLIST, NULL, 0, (void *)&settings->frags[iTotalFragCount], sizeof(bd_fragment_t) * (BDM_MAX_FRAGS - iTotalFragCount));
+        if (iFragCount > BDM_MAX_FRAGS) {
+            // Too many fragments
+            close(fd);
+            sbUnprepare(&settings->common);
+            guiMsgBox(_l(_STR_ERR_FRAGMENTED), 0, NULL);
+            return;
+        }
+        iso_frag->frag_count += iFragCount;
+        iTotalFragCount += iFragCount;
+
+        if ((gPS2Logo) && (i == 0))
+            EnablePS2Logo = CheckPS2Logo(fd, 0);
+
+        close(fd);
     }
 
     // Initialize layer 1 information.
@@ -370,14 +402,20 @@ static void bdmLaunchGame(int id, config_set_t *configSet)
     }
     settings->common.layer1_start = layer1_start;
 
+    // adjust ZSO cache
+    settings->common.zso_cache = bdmCacheSize;
+
     if ((result = sbLoadCheats(bdmPrefix, game->startup)) < 0) {
-        switch (result) {
-            case -ENOENT:
-                guiWarning(_l(_STR_NO_CHEATS_FOUND), 10);
-                break;
-            default:
-                guiWarning(_l(_STR_ERR_CHEATS_LOAD_FAILED), 10);
-        }
+        if (gAutoLaunchBDMGame == NULL) {
+            switch (result) {
+                case -ENOENT:
+                    guiWarning(_l(_STR_NO_CHEATS_FOUND), 10);
+                    break;
+                default:
+                    guiWarning(_l(_STR_ERR_CHEATS_LOAD_FAILED), 10);
+            }
+        } else
+            LOG("Cheats error\n");
     }
 
     if (gRememberLastPlayed) {
@@ -387,14 +425,26 @@ static void bdmLaunchGame(int id, config_set_t *configSet)
 
     if (configGetStrCopy(configSet, CONFIG_ITEM_ALTSTARTUP, filename, sizeof(filename)) == 0)
         strcpy(filename, game->startup);
-    deinit(NO_EXCEPTION, BDM_MODE); // CAREFUL: deinit will call bdmCleanUp, so bdmGames/game will be freed
 
-    if (!strcmp(bdmDriver, "usb"))
-        sysLaunchLoaderElf(filename, "BDM_USB_MODE", irx_size, irx, size_mcemu_irx, &bdm_mcemu_irx, EnablePS2Logo, compatmask);
-    else if (!strcmp(bdmDriver, "sd") && strlen(bdmDriver) == 2)
-        sysLaunchLoaderElf(filename, "BDM_ILK_MODE", irx_size, irx, size_mcemu_irx, &bdm_mcemu_irx, EnablePS2Logo, compatmask);
-    else if (!strcmp(bdmDriver, "sdc") && strlen(bdmDriver) == 3)
-        sysLaunchLoaderElf(filename, "BDM_M4S_MODE", irx_size, irx, size_mcemu_irx, &bdm_mcemu_irx, EnablePS2Logo, compatmask);
+    if (gAutoLaunchBDMGame == NULL)
+        deinit(NO_EXCEPTION, BDM_MODE); // CAREFUL: deinit will call bdmCleanUp, so bdmGames/game will be freed
+    else {
+        miniDeinit(configSet);
+
+        free(gAutoLaunchBDMGame);
+        gAutoLaunchBDMGame = NULL;
+    }
+
+    if (!strcmp(bdmDriver, "usb")) {
+        settings->common.fakemodule_flags |= FAKE_MODULE_FLAG_USBD;
+        sysLaunchLoaderElf(filename, "BDM_USB_MODE", irx_size, irx, size_mcemu_irx, bdm_mcemu_irx, EnablePS2Logo, compatmask);
+    } else if (!strcmp(bdmDriver, "sd") && strlen(bdmDriver) == 2) {
+        settings->common.fakemodule_flags |= 0 /* TODO! fake ilinkman ? */;
+        sysLaunchLoaderElf(filename, "BDM_ILK_MODE", irx_size, irx, size_mcemu_irx, bdm_mcemu_irx, EnablePS2Logo, compatmask);
+    } else if (!strcmp(bdmDriver, "sdc") && strlen(bdmDriver) == 3) {
+        settings->common.fakemodule_flags |= 0;
+        sysLaunchLoaderElf(filename, "BDM_M4S_MODE", irx_size, irx, size_mcemu_irx, bdm_mcemu_irx, EnablePS2Logo, compatmask);
+    }
 }
 
 static config_set_t *bdmGetConfig(int id)
