@@ -904,7 +904,6 @@ struct UIItem diaAbout[] = {
     {UI_BREAK},
 
     // Support details
-    {UI_BREAK},
     {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_FORUM_DETAILS}}},
     {UI_SPACER},
     {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {" https://bit.ly/3HQmNYW ", -1}}},
