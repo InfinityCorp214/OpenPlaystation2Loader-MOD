@@ -887,7 +887,6 @@ struct UIItem diaAbout[] = {
     {UI_BREAK},
 
     {UI_BREAK},
-
     // Network update
     {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {NULL, _STR_NET_UPDATE}}},
     {UI_BREAK},
@@ -904,10 +903,10 @@ struct UIItem diaAbout[] = {
     {UI_BREAK},
 
     // Support details
+    {UI_BREAK},
     {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_FORUM_DETAILS}}},
     {UI_SPACER},
-    {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {" https://bit.ly/3HQmNYW ", -1}}},
-    {UI_BREAK},
+    {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {"https://bit.ly/3HQmNYW", -1}}},
 
     // buttons
     {UI_OK, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_OK}}},
