@@ -881,12 +881,13 @@ struct UIItem diaAbout[] = {
     {UI_SPACER},
     {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"LocalH - RandQalan - ShaolinAssassin - yoshi314 - zero35", -1}}},
     {UI_BREAK},
-
-    {UI_SPACER},
+	
+  {UI_SPACER},
     {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"PS2 Heavy Gamers & Infinity Corp", -1}}},
     {UI_BREAK},
-
+	
     {UI_BREAK},
+
     // Network update
     {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {NULL, _STR_NET_UPDATE}}},
     {UI_BREAK},

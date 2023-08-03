@@ -736,7 +736,7 @@ static int checkLoadConfigBDM(int types)
     int value;
 
     // check USB
-    if (bdmFindPartition(path, "conf_opl.cfg", 0)) {
+    if (bdmFindPartition(path, "conf_oplx.cfg", 0)) {
         configEnd();
         configInit(path);
         value = configReadMulti(types);
@@ -755,7 +755,7 @@ static int checkLoadConfigHDD(int types)
 
     hddLoadModules();
 
-    snprintf(path, sizeof(path), "%sconf_opl.cfg", gHDDPrefix);
+    snprintf(path, sizeof(path), "%sconf_oplx.cfg", gHDDPrefix);
     value = open(path, O_RDONLY);
     if (value >= 0) {
         close(value);
@@ -941,7 +941,7 @@ static int trySaveConfigBDM(int types)
     char path[64];
 
     // check USB
-    if (bdmFindPartition(path, "conf_opl.cfg", 1)) {
+    if (bdmFindPartition(path, "conf_oplx.cfg", 1)) {
         configSetMove(path);
         return configWriteMulti(types);
     }
@@ -1691,6 +1691,7 @@ static void init(void)
     setDefaults();
 
     padInit(0);
+    int padStatus = 0;
     configInit(NULL);
 
     rmInit();
@@ -1711,8 +1712,16 @@ static void init(void)
 
     gSelectButton = (InitConsoleRegionData() == CONSOLE_REGION_JAPAN) ? KEY_CIRCLE : KEY_CROSS;
 
-    // try to restore config
-    _loadConfig();
+    while (!padStatus)
+        padStatus = startPads();
+    readPads();
+    if (!getKeyPressed(KEY_START)) {
+        _loadConfig(); // only try to restore config if emergency key is not being pressed
+    } else {
+        LOG("--- SKIPPING OPL CONFIG LOADING\n");
+        applyConfig(-1, -1);
+    }
+
 
     // queue deffered init of sound effects, which will take place after the preceding initialization steps within the queue are complete.
     ioPutRequest(IO_CUSTOM_SIMPLEACTION, &deferredAudioInit);
